@@ -4,12 +4,11 @@ use mpl_utils::assert_signer;
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint::ProgramResult,
-    program_error::ProgramError,
     pubkey::Pubkey,
 };
 
 use crate::{
-    assertions::assert_owned_by,
+    assertions::{assert_owned_by, assert_owner_in, assert_token_program_matches_package},
     instruction::{Burn, Context},
     state::{Metadata, TokenMetadataAccount},
 };
@@ -41,13 +40,18 @@ pub fn process_burn_nft<'a>(program_id: &Pubkey, accounts: &'a [AccountInfo<'a>]
     // Assert program ownership.
     assert_owned_by(metadata_info, program_id)?;
     assert_owned_by(edition_info, program_id)?;
-    assert_owned_by(mint_info, &spl_token::ID)?;
-    assert_owned_by(token_info, &spl_token::ID)?;
+
+    assert_owner_in(
+        mint_info,
+        &mpl_utils::token::TOKEN_PROGRAM_IDS,
+    )?;
+    assert_owner_in(
+        token_info,
+        &mpl_utils::token::TOKEN_PROGRAM_IDS,
+    )?;
 
     // Check program IDs.
-    if spl_token_program_info.key != &spl_token::ID {
-        return Err(ProgramError::IncorrectProgramId);
-    }
+    assert_token_program_matches_package(spl_token_program_info)?;
 
     // Deserialize accounts.
     let metadata = Metadata::from_account_info(metadata_info)?;

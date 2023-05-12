@@ -7,11 +7,11 @@ use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, program::invoke, program_option::COption,
     program_pack::Pack, pubkey::Pubkey, system_program, sysvar,
 };
-use spl_token::{instruction::AuthorityType as SplAuthorityType, state::Account};
+use spl_token_2022::{instruction::AuthorityType, state::Account};
 
 use crate::{
     assertions::{
-        assert_derivation, assert_keys_equal, assert_owned_by,
+        assert_derivation, assert_keys_equal, assert_owned_by, assert_owner_in,
         metadata::assert_update_authority_is_correct,
     },
     error::MetadataError,
@@ -24,6 +24,7 @@ use crate::{
     },
     utils::{auth_rules_validate, freeze, thaw, AuthRulesValidateParams},
 };
+use crate::assertions::assert_key_in;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DelegateScenario {
@@ -173,7 +174,7 @@ fn create_delegate_v1(
     // ownership
 
     assert_owned_by(ctx.accounts.metadata_info, program_id)?;
-    assert_owned_by(ctx.accounts.mint_info, &spl_token::id())?;
+    assert_owner_in(ctx.accounts.mint_info, &mpl_utils::token::TOKEN_PROGRAM_IDS)?;
 
     // key match
 
@@ -253,8 +254,8 @@ fn create_persistent_delegate_v1(
     // ownership
 
     assert_owned_by(ctx.accounts.metadata_info, program_id)?;
-    assert_owned_by(ctx.accounts.mint_info, &spl_token::id())?;
-    assert_owned_by(token_info, &spl_token::id())?;
+    assert_owner_in(ctx.accounts.mint_info, &mpl_utils::token::TOKEN_PROGRAM_IDS)?;
+    assert_owner_in(token_info, &mpl_utils::token::TOKEN_PROGRAM_IDS)?;
 
     // key match
 
@@ -263,7 +264,7 @@ fn create_persistent_delegate_v1(
         ctx.accounts.sysvar_instructions_info.key,
         &sysvar::instructions::ID,
     )?;
-    assert_keys_equal(spl_token_program_info.key, &spl_token::ID)?;
+    assert_key_in(spl_token_program_info.key, &mpl_utils::token::TOKEN_PROGRAM_IDS)?;
 
     // account relationships
 
@@ -410,7 +411,7 @@ fn create_persistent_delegate_v1(
 
     // creates the spl-token delegate
     invoke(
-        &spl_token::instruction::approve(
+        &spl_token_2022::instruction::approve(
             spl_token_program_info.key,
             token_info.key,
             ctx.accounts.delegate_info.key,
@@ -442,11 +443,11 @@ fn create_persistent_delegate_v1(
             }
         } else {
             invoke(
-                &spl_token::instruction::set_authority(
+                &spl_token_2022::instruction::set_authority(
                     spl_token_program_info.key,
                     token_info.key,
                     Some(master_edition_info.key),
-                    SplAuthorityType::CloseAccount,
+                    AuthorityType::CloseAccount,
                     ctx.accounts.authority_info.key,
                     &[],
                 )?,

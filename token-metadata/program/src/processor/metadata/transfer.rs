@@ -8,17 +8,19 @@ use solana_program::{
     program::invoke,
     program_error::ProgramError,
     program_option::COption,
-    program_pack::Pack,
     pubkey::Pubkey,
     system_program,
     sysvar::{self, instructions::get_instruction_relative},
 };
-use spl_token::state::Account;
+use spl_token_2022::{
+    extension::StateWithExtensions,
+    state::{Account},
+};
 
 use crate::{
     assertions::{
-        assert_keys_equal, assert_owned_by, assert_token_matches_owner_and_mint,
-        metadata::assert_holding_amount,
+        assert_keys_equal, assert_owned_by, assert_owner_in, assert_token_matches_owner_and_mint,
+        assert_token_program_matches_package, metadata::assert_holding_amount,
     },
     error::MetadataError,
     instruction::{Context, Transfer, TransferArgs},
@@ -28,9 +30,9 @@ use crate::{
         TokenMetadataAccount, TokenRecord, TokenStandard,
     },
     utils::{
-        assert_derivation, auth_rules_validate, clear_close_authority, close_program_account,
-        create_token_record_account, frozen_transfer, AuthRulesValidateParams,
-        ClearCloseAuthorityParams,
+        assert_derivation, auth_rules_validate, AuthRulesValidateParams, clear_close_authority,
+        ClearCloseAuthorityParams, close_program_account, create_token_record_account,
+        frozen_transfer,
     },
 };
 
@@ -102,8 +104,8 @@ fn transfer_v1(program_id: &Pubkey, ctx: Context<Transfer>, args: TransferArgs) 
 
     // Assert program ownership.
     assert_owned_by(ctx.accounts.metadata_info, program_id)?;
-    assert_owned_by(ctx.accounts.mint_info, &spl_token::ID)?;
-    assert_owned_by(ctx.accounts.token_info, &spl_token::ID)?;
+    assert_owner_in(ctx.accounts.mint_info, &mpl_utils::token::TOKEN_PROGRAM_IDS)?;
+    assert_owner_in(ctx.accounts.token_info, &mpl_utils::token::TOKEN_PROGRAM_IDS)?;
     if let Some(owner_token_record_info) = ctx.accounts.owner_token_record_info {
         assert_owned_by(owner_token_record_info, program_id)?;
     }
@@ -123,7 +125,7 @@ fn transfer_v1(program_id: &Pubkey, ctx: Context<Transfer>, args: TransferArgs) 
             ctx.accounts.destination_info,
             &[
                 ctx.accounts.destination_owner_info.key.as_ref(),
-                spl_token::id().as_ref(),
+                ctx.accounts.spl_token_program_info.key.as_ref(),
                 ctx.accounts.mint_info.key.as_ref(),
             ],
         )?;
@@ -134,7 +136,7 @@ fn transfer_v1(program_id: &Pubkey, ctx: Context<Transfer>, args: TransferArgs) 
                 ctx.accounts.payer_info.key,
                 ctx.accounts.destination_owner_info.key,
                 ctx.accounts.mint_info.key,
-                &spl_token::id(),
+                ctx.accounts.spl_token_program_info.key,
             ),
             &[
                 ctx.accounts.payer_info.clone(),
@@ -144,7 +146,7 @@ fn transfer_v1(program_id: &Pubkey, ctx: Context<Transfer>, args: TransferArgs) 
             ],
         )?;
     } else {
-        assert_owned_by(ctx.accounts.destination_info, &spl_token::id())?;
+        assert_owner_in(ctx.accounts.destination_info, &mpl_utils::token::TOKEN_PROGRAM_IDS)?;
         assert_token_matches_owner_and_mint(
             ctx.accounts.destination_info,
             ctx.accounts.destination_owner_info.key,
@@ -153,10 +155,7 @@ fn transfer_v1(program_id: &Pubkey, ctx: Context<Transfer>, args: TransferArgs) 
     }
 
     // Check program IDs.
-
-    if ctx.accounts.spl_token_program_info.key != &spl_token::ID {
-        return Err(ProgramError::IncorrectProgramId);
-    }
+    assert_token_program_matches_package(ctx.accounts.spl_token_program_info)?;
 
     if ctx.accounts.spl_ata_program_info.key != &spl_associated_token_account::ID {
         return Err(ProgramError::IncorrectProgramId);
@@ -204,7 +203,7 @@ fn transfer_v1(program_id: &Pubkey, ctx: Context<Transfer>, args: TransferArgs) 
     };
 
     let token_standard = metadata.token_standard;
-    let token = Account::unpack(&ctx.accounts.token_info.try_borrow_data()?)?;
+    let token = StateWithExtensions::<Account>::unpack(&ctx.accounts.token_info.data.borrow())?.base;
 
     let AuthorityResponse { authority_type, .. } =
         AuthorityType::get_authority_type(AuthorityRequest {
@@ -242,9 +241,9 @@ fn transfer_v1(program_id: &Pubkey, ctx: Context<Transfer>, args: TransferArgs) 
             let wallets_are_system_program_owned =
                 cmp_pubkeys(ctx.accounts.token_owner_info.owner, &system_program::ID)
                     && cmp_pubkeys(
-                        ctx.accounts.destination_owner_info.owner,
-                        &system_program::ID,
-                    );
+                    ctx.accounts.destination_owner_info.owner,
+                    &system_program::ID,
+                );
 
             // The only case where a transfer is wallet-to-wallet is if the wallets are both owned by
             // the system program and it's not a CPI call. Holders have to be signers so we can reject

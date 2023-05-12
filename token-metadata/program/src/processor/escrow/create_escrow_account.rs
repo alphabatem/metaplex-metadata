@@ -7,10 +7,11 @@ use solana_program::{
     pubkey::Pubkey,
     system_program,
 };
+use spl_token_2022::state::Account;
 
 use super::find_escrow_seeds;
 use crate::{
-    assertions::{assert_derivation, assert_initialized, assert_owned_by},
+    assertions::{assert_derivation, assert_owned_by, assert_owner_in, token_unpack},
     error::MetadataError,
     pda::{EDITION, PREFIX},
     state::{
@@ -34,10 +35,10 @@ pub fn process_create_escrow_account(
     assert_owned_by(metadata_account_info, &crate::ID)?;
 
     let mint_account_info = next_account_info(account_info_iter)?;
-    assert_owned_by(mint_account_info, &spl_token::id())?;
+    assert_owner_in(mint_account_info, &mpl_utils::token::TOKEN_PROGRAM_IDS)?;
 
     let token_account_info = next_account_info(account_info_iter)?;
-    assert_owned_by(token_account_info, &spl_token::id())?;
+    assert_owner_in(token_account_info, &mpl_utils::token::TOKEN_PROGRAM_IDS)?;
 
     let edition_account_info = next_account_info(account_info_iter)?;
     assert_owned_by(edition_account_info, &crate::ID)?;
@@ -92,7 +93,7 @@ pub fn process_create_escrow_account(
     let creator = maybe_authority_info.unwrap_or(payer_account_info);
     assert_signer(creator)?;
 
-    let token_account: spl_token::state::Account = assert_initialized(token_account_info)?;
+    let token_account = token_unpack::<Account>(&token_account_info.try_borrow_data()?)?.base;
 
     if token_account.mint != *mint_account_info.key {
         return Err(MetadataError::MintMismatch.into());

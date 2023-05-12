@@ -7,7 +7,7 @@ use solana_program::{
 
 use crate::{
     assertions::{
-        assert_owned_by, collection::assert_has_collection_authority,
+        assert_owned_by, assert_owner_in, collection::assert_has_collection_authority,
         metadata::assert_metadata_derivation,
     },
     error::MetadataError,
@@ -28,7 +28,7 @@ pub fn unverify_collection(program_id: &Pubkey, accounts: &[AccountInfo]) -> Pro
     // Account validation.
     assert_owned_by(metadata_info, program_id)?;
     assert_signer(collection_authority_info)?;
-    assert_owned_by(collection_mint_info, &spl_token::id())?;
+    assert_owner_in(collection_mint_info, &mpl_utils::token::TOKEN_PROGRAM_IDS)?;
 
     // Deserialize the collection item metadata.
     let mut metadata = Metadata::from_account_info(metadata_info)?;

@@ -7,7 +7,7 @@ use solana_program::{
 
 use crate::{
     assertions::{
-        assert_owned_by, collection::assert_has_collection_authority,
+        assert_owned_by, assert_owner_in, collection::assert_has_collection_authority,
         metadata::assert_metadata_derivation,
     },
     error::MetadataError,
@@ -33,7 +33,7 @@ pub fn unverify_sized_collection_item(
     assert_signer(payer_info)?;
 
     assert_owned_by(metadata_info, program_id)?;
-    assert_owned_by(collection_mint_info, &spl_token::id())?;
+    assert_owner_in(collection_mint_info, &mpl_utils::token::TOKEN_PROGRAM_IDS)?;
 
     let mut metadata = Metadata::from_account_info(metadata_info)?;
 

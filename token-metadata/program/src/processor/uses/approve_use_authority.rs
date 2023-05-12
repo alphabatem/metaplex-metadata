@@ -6,7 +6,7 @@ use solana_program::{
     program::invoke,
     pubkey::Pubkey,
 };
-use spl_token::instruction::approve;
+use spl_token_2022::instruction::approve;
 
 use crate::{
     assertions::{

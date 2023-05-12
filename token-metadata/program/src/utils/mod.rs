@@ -21,7 +21,7 @@ use solana_program::{
     account_info::AccountInfo, borsh::try_from_slice_unchecked, entrypoint::ProgramResult,
     program::invoke_signed, program_error::ProgramError, pubkey::Pubkey, system_program,
 };
-use spl_token::instruction::{set_authority, AuthorityType};
+use spl_token_2022::instruction::{set_authority, AuthorityType};
 
 pub use crate::assertions::{
     assert_delegated_tokens, assert_derivation, assert_freeze_authority_matches_mint,

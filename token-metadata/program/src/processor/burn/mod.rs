@@ -12,7 +12,7 @@ use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     program_pack::Pack, pubkey::Pubkey, system_program, sysvar,
 };
-use spl_token::state::Account as TokenAccount;
+use spl_token_2022::state::Account as TokenAccount;
 
 use crate::{
     error::MetadataError,

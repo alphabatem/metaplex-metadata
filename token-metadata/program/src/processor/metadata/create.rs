@@ -1,13 +1,13 @@
-use mpl_utils::assert_initialized;
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program::invoke, program_pack::Pack,
     pubkey::Pubkey, rent::Rent, system_instruction, sysvar::Sysvar,
 };
-use spl_token::{native_mint::DECIMALS, state::Mint};
+use spl_token_2022::{native_mint::DECIMALS, state::Mint};
 
 use crate::{
     error::MetadataError,
     instruction::{Context, Create, CreateArgs},
+    assertions::{token_unpack},
     state::{
         Metadata, ProgrammableConfig, TokenMetadataAccount, TokenStandard, MAX_MASTER_EDITION_LEN,
         TOKEN_STANDARD_INDEX,
@@ -62,9 +62,9 @@ fn create_v1(program_id: &Pubkey, ctx: Context<Create>, args: CreateArgs) -> Pro
             &system_instruction::create_account(
                 ctx.accounts.payer_info.key,
                 ctx.accounts.mint_info.key,
-                Rent::get()?.minimum_balance(spl_token::state::Mint::LEN),
-                spl_token::state::Mint::LEN as u64,
-                &spl_token::id(),
+                Rent::get()?.minimum_balance(Mint::LEN),
+                Mint::LEN as u64,
+                ctx.accounts.spl_token_program_info.key,
             ),
             &[
                 ctx.accounts.payer_info.clone(),
@@ -90,7 +90,7 @@ fn create_v1(program_id: &Pubkey, ctx: Context<Create>, args: CreateArgs) -> Pro
 
         // initializing the mint account
         invoke(
-            &spl_token::instruction::initialize_mint2(
+            &spl_token_2022::instruction::initialize_mint2(
                 ctx.accounts.spl_token_program_info.key,
                 ctx.accounts.mint_info.key,
                 ctx.accounts.authority_info.key,
@@ -105,7 +105,7 @@ fn create_v1(program_id: &Pubkey, ctx: Context<Create>, args: CreateArgs) -> Pro
     } else {
         // validates the existing mint account
 
-        let mint: Mint = assert_initialized(ctx.accounts.mint_info, MetadataError::Uninitialized)?;
+        let mint = token_unpack::<Mint>(&ctx.accounts.mint_info.try_borrow_data()?)?.base;
         // NonFungible assets must have decimals == 0 and supply no greater than 1
         if matches!(
             asset_data.token_standard,

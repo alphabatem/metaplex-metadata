@@ -4,10 +4,10 @@ use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, program_error::ProgramError,
     pubkey::Pubkey,
 };
-use spl_token::state::Account;
+use spl_token_2022::state::Account;
 
 use crate::{
-    assertions::{assert_initialized, assert_owned_by},
+    assertions::{assert_owned_by, assert_owner_in, token_unpack},
     error::MetadataError,
     pda::PREFIX,
     state::{
@@ -212,11 +212,11 @@ pub fn assert_holding_amount(
     amount: u64,
 ) -> ProgramResult {
     assert_owned_by(metadata_info, program_id)?;
-    assert_owned_by(mint_info, &spl_token::id())?;
+    assert_owner_in(mint_info, &mpl_utils::token::TOKEN_PROGRAM_IDS)?;
 
-    let token_account: Account = assert_initialized(token_account_info)?;
+    let token_account = token_unpack::<Account>(&token_account_info.try_borrow_data()?)?.base;
 
-    assert_owned_by(token_account_info, &spl_token::id())?;
+    assert_owner_in(token_account_info, &mpl_utils::token::TOKEN_PROGRAM_IDS)?;
 
     if token_account.owner != *owner_info.key {
         return Err(MetadataError::InvalidOwner.into());

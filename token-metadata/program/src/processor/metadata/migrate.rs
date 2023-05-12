@@ -1,13 +1,14 @@
 use mpl_token_auth_rules::utils::assert_owned_by;
-use mpl_utils::{assert_signer, create_or_allocate_account_raw};
+use mpl_utils::{assert_signer, create_or_allocate_account_raw, token::assert_token_program_matches_package};
 use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, program_error::ProgramError,
     program_option::COption, pubkey, pubkey::Pubkey, system_program, sysvar,
 };
-use spl_token::state::{Account, Mint};
+use spl_token_2022::state::{Account, Mint};
 
 use crate::{
     assertions::{
+        assert_owner_in,
         collection::assert_is_collection_delegated_authority, metadata::assert_metadata_valid,
     },
     error::MetadataError,
@@ -15,8 +16,8 @@ use crate::{
     pda::PREFIX,
     state::{
         CollectionAuthorityRecord, Metadata, MigrationType, ProgrammableConfig, Resizable,
-        TokenDelegateRole, TokenMetadataAccount, TokenRecord, TokenStandard, TokenState,
-        TOKEN_RECORD_SEED, TOKEN_STANDARD_INDEX,
+        TOKEN_RECORD_SEED, TOKEN_STANDARD_INDEX, TokenDelegateRole, TokenMetadataAccount, TokenRecord,
+        TokenStandard, TokenState,
     },
     utils::{
         assert_derivation, assert_edition_valid, assert_initialized, clean_write_metadata, freeze,
@@ -62,13 +63,14 @@ pub fn migrate_v1(program_id: &Pubkey, ctx: Context<Migrate>, args: MigrateArgs)
     // Assert program ownership
     assert_owned_by(metadata_info, program_id)?;
     assert_owned_by(edition_info, program_id)?;
-    assert_owned_by(mint_info, &spl_token::ID)?;
-    assert_owned_by(token_info, &spl_token::ID)?;
+    assert_owner_in(mint_info, &mpl_utils::token::TOKEN_PROGRAM_IDS)?;
+    assert_owner_in(token_info, &mpl_utils::token::TOKEN_PROGRAM_IDS)?;
 
     // Check program IDs.
-    if spl_token_program_info.key != &spl_token::ID {
-        return Err(ProgramError::IncorrectProgramId);
-    }
+    assert_token_program_matches_package(
+        spl_token_program_info,
+        ProgramError::IncorrectProgramId,
+    )?;
 
     if system_program_info.key != &system_program::ID {
         return Err(ProgramError::IncorrectProgramId);

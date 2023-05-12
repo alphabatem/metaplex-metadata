@@ -1,4 +1,4 @@
-use mpl_utils::{assert_signer, cmp_pubkeys};
+use mpl_utils::{assert_signer, cmp_pubkeys, token::assert_token_program_matches_package};
 use solana_program::{
     account_info::AccountInfo,
     entrypoint::ProgramResult,
@@ -7,12 +7,12 @@ use solana_program::{
     program_error::ProgramError,
     pubkey::Pubkey,
 };
-use spl_token::state::{Account, Mint as MintAccount};
+use spl_token_2022::state::{Account, Mint as MintAccount};
 
 use crate::{
     assertions::{
         assert_derivation, assert_initialized, assert_keys_equal,
-        assert_mint_authority_matches_mint, assert_owned_by,
+        assert_mint_authority_matches_mint, assert_owned_by, assert_owner_in
     },
     error::MetadataError,
     instruction::{Context, Mint, MintArgs},
@@ -68,12 +68,14 @@ pub fn mint_v1(program_id: &Pubkey, ctx: Context<Mint>, args: MintArgs) -> Progr
         return Err(MetadataError::MintMismatch.into());
     }
 
-    assert_owned_by(ctx.accounts.mint_info, &spl_token::id())?;
+    assert_owner_in(ctx.accounts.mint_info, &mpl_utils::token::TOKEN_PROGRAM_IDS)?;
     let mint: MintAccount = assert_initialized(ctx.accounts.mint_info)?;
 
-    if !cmp_pubkeys(ctx.accounts.spl_token_program_info.key, &spl_token::id()) {
-        return Err(ProgramError::IncorrectProgramId);
-    }
+
+    assert_token_program_matches_package(
+        ctx.accounts.spl_token_program_info,
+        ProgramError::IncorrectProgramId,
+    )?;
 
     // validates the authority:
     // - NonFungible must have a "valid" master edition
@@ -128,7 +130,7 @@ pub fn mint_v1(program_id: &Pubkey, ctx: Context<Mint>, args: MintArgs) -> Progr
             ctx.accounts.token_info,
             &[
                 token_owner_info.key.as_ref(),
-                spl_token::id().as_ref(),
+                ctx.accounts.spl_token_program_info.key.as_ref(),
                 ctx.accounts.mint_info.key.as_ref(),
             ],
         )?;
@@ -141,7 +143,7 @@ pub fn mint_v1(program_id: &Pubkey, ctx: Context<Mint>, args: MintArgs) -> Progr
                 ctx.accounts.payer_info.key,
                 token_owner_info.key,
                 ctx.accounts.mint_info.key,
-                &spl_token::id(),
+                ctx.accounts.spl_token_program_info.key,
             ),
             &[
                 ctx.accounts.payer_info.clone(),
@@ -151,7 +153,7 @@ pub fn mint_v1(program_id: &Pubkey, ctx: Context<Mint>, args: MintArgs) -> Progr
             ],
         )?;
     } else {
-        assert_owned_by(ctx.accounts.token_info, &spl_token::id())?;
+        assert_owner_in(ctx.accounts.token_info, &mpl_utils::token::TOKEN_PROGRAM_IDS)?;
     }
 
     let token: Account = assert_initialized(ctx.accounts.token_info)?;
@@ -229,7 +231,7 @@ pub fn mint_v1(program_id: &Pubkey, ctx: Context<Mint>, args: MintArgs) -> Progr
             }
 
             invoke_signed(
-                &spl_token::instruction::mint_to(
+                &spl_token_2022::instruction::mint_to(
                     ctx.accounts.spl_token_program_info.key,
                     ctx.accounts.mint_info.key,
                     ctx.accounts.token_info.key,
@@ -260,7 +262,7 @@ pub fn mint_v1(program_id: &Pubkey, ctx: Context<Mint>, args: MintArgs) -> Progr
         }
         _ => {
             invoke(
-                &spl_token::instruction::mint_to(
+                &spl_token_2022::instruction::mint_to(
                     ctx.accounts.spl_token_program_info.key,
                     ctx.accounts.mint_info.key,
                     ctx.accounts.token_info.key,

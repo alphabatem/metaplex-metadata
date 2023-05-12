@@ -5,7 +5,7 @@ use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, msg, program_error::ProgramError,
     program_pack::Pack, pubkey::Pubkey, sysvar,
 };
-use spl_token::state::Account;
+use spl_token_2022::state::Account;
 
 use crate::{
     assertions::{assert_owned_by, programmable::assert_valid_authorization},

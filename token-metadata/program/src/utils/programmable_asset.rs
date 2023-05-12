@@ -7,8 +7,8 @@ use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, program::invoke_signed,
     program_error::ProgramError, program_option::COption, pubkey::Pubkey,
 };
-use spl_token::{
-    instruction::{freeze_account, thaw_account, AuthorityType as SplAuthorityType},
+use spl_token_2022::{
+    instruction::{AuthorityType, freeze_account, thaw_account},
     state::Account,
 };
 
@@ -19,8 +19,8 @@ use crate::{
     pda::{EDITION, PREFIX},
     processor::{AuthorizationData, TransferScenario},
     state::{
-        Operation, PayloadKey, ProgrammableConfig, Resizable, ToAccountMeta, TokenMetadataAccount,
-        TokenRecord, TOKEN_RECORD_SEED,
+        Operation, PayloadKey, ProgrammableConfig, Resizable, ToAccountMeta, TOKEN_RECORD_SEED,
+        TokenMetadataAccount, TokenRecord,
     },
 };
 
@@ -126,7 +126,7 @@ pub fn thaw<'a>(
             edition_info.key,
             &[],
         )
-        .unwrap(),
+            .unwrap(),
         &[token_info, mint_info, edition_info],
         &[&edition_info_seeds],
     )?;
@@ -362,11 +362,11 @@ pub(crate) fn clear_close_authority(params: ClearCloseAuthorityParams) -> Progra
         let seeds = edition_seeds!(mint_info.key);
 
         invoke_signed(
-            &spl_token::instruction::set_authority(
+            &spl_token_2022::instruction::set_authority(
                 spl_token_program_info.key,
                 token_info.key,
                 None,
-                SplAuthorityType::CloseAccount,
+                AuthorityType::CloseAccount,
                 authority_info.key,
                 &[],
             )?,

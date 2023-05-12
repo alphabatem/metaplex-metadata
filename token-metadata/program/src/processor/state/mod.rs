@@ -8,14 +8,14 @@ use solana_program::{
     account_info::AccountInfo, entrypoint::ProgramResult, program::invoke, program_pack::Pack,
     pubkey::Pubkey, system_program, sysvar,
 };
-use spl_token::{
+use spl_token_2022::{
     instruction::{freeze_account, thaw_account},
     state::{Account, Mint},
 };
 pub use unlock::*;
 
 use crate::{
-    assertions::{assert_keys_equal, metadata::assert_state},
+    assertions::{assert_keys_equal, metadata::assert_state, assert_owner_in},
     error::MetadataError,
     pda::find_token_record_account,
     state::{
@@ -55,7 +55,7 @@ pub(crate) fn toggle_asset_state(
     // ownership
 
     assert_owned_by(accounts.metadata_info, program_id)?;
-    assert_owned_by(accounts.mint_info, &spl_token::id())?;
+    assert_owner_in(accounts.mint_info, &mpl_utils::token::TOKEN_PROGRAM_IDS)?;
 
     // key match
 
