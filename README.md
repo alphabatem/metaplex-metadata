@@ -5,18 +5,9 @@ _This is a fork of the Metaplex Program Library - Focused purely on the metadata
 Metadata requirements._
 
 
+---
 
-[![Program Tests](https://github.com/metaplex-foundation/metaplex-program-library/actions/workflows/program.yml/badge.svg)](https://github.com/metaplex-foundation/metaplex-program-library/actions/workflows/program.yml)
-[![Integration Tests](https://github.com/metaplex-foundation/metaplex-program-library/actions/workflows/integration.yml/badge.svg)](https://github.com/metaplex-foundation/metaplex-program-library/actions/workflows/integration.yml)
-[![SDK Tests](https://github.com/metaplex-foundation/metaplex-program-library/actions/workflows/sdk.yml/badge.svg)](https://github.com/metaplex-foundation/metaplex-program-library/actions/workflows/sdk.yml)
 
-## Metaplex Contracts
-
-| Name                                       | Rust Crate                                                                | npm Package                                                            |
-|:-------------------------------------------|:--------------------------------------------------------------------------|------------------------------------------------------------------------|
-| [Bubblegum](./bubblegum)                   | [![Crate][mpl-bubblegum-img-long]][mpl-bubblegum-crate]                   | [![NPM][mpl-bubblegum-nimg-long]][mpl-bubblegum-npm]                   |
-| [Gumdrop](./gumdrop)                       | [![Crate][mpl-gumdrop-img-long]][mpl-gumdrop-crate]                       | [![NPM][mpl-gumdrop-nimg-long]][mpl-gumdrop-npm]                       |
-| [Token Metadata](./token-metadata)         | [![Crate][mpl-token-metadata-img-long]][mpl-token-metadata-crate]         | [![NPM][mpl-token-metadata-nimg-long]][mpl-token-metadata-npm]         |
 
 ## Development
 
@@ -63,8 +54,6 @@ merged.
 | Package            | Link                                                   | Version                                                              |
 |:-------------------|:-------------------------------------------------------|:---------------------------------------------------------------------|
 | Bubblegum          | [mpl-bubblegum][mpl-bubblegum-crate]                   | [![Crate][mpl-bubblegum-img]][mpl-bubblegum-crate]                   |
-| Testing Utils      | [mpl-testing-utils][mpl-testing-utils-crate]           | [![Crate][mpl-testing-utils-img]][mpl-testing-utils-crate]           |
-| Utils              | [mpl-utils][mpl-utils-crate]                           | [![Crate][mpl-utils-img]][mpl-utils-crate]                           |
 | Gumdrop            | [mpl-gumdrop][mpl-gumdrop-crate]                       | [![Crate][mpl-gumdrop-img]][mpl-gumdrop-crate]                       |
 | Token Metadata     | [mpl-token-metadata][mpl-token-metadata-crate]         | [![Crate][mpl-token-metadata-img]][mpl-token-metadata-crate]         |
 
